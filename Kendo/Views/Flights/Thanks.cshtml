@@ -1,0 +1,202 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.22/pdfmake.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
+    <style>
+        .divleft {
+            margin-left: 350px;
+            height: auto;
+            width: 824px;
+            /*width: 1000px;*/
+            border-style: solid;
+            position: relative;
+            /*top: 50px;*/
+        }
+
+        .division {
+            display: inline-block;
+            padding: 1rem 1rem;
+            font-family: Calibri;
+        }
+
+        span {
+            font-family: Calibri;
+        }
+        
+    </style>
+
+    <script type="text/javascript">
+        var object = [];
+        var newrow = "";
+        var ticket, flight, from, to, dateofflightticketbooking,arrivaltime, departuretime; var totalticketfare = 0;
+        $(document).ready(function () {
+            $.ajax({
+                url: '@Url.Action("ThankYou", "Flights")',
+                            type: 'GET',
+                            dataType: 'json',
+                contentType: "application/json; charset=utf-8",
+                success: function (response) {
+                    debugger;
+                    console.log(response);
+                    object=response;
+                    for (var i = 0; i < object.length; i++)
+                    {
+                        
+                        newrow = "<tr><td><span id=name style=color:dodgerblue;margin-left:100px;><b>"
+                            + object[i].passengername + "</b></span></td><td><span id=age style=color:dodgerblue;margin-left:100px;><b>"
+                            + object[i].age + "</b></span></td><td><span id=gender style=color:dodgerblue;margin-left:100px;><b>"
+                            + object[i].gender + "</b></span></td><td><span id=seat style=color:dodgerblue;margin-left:100px;><b>"
+                            + object[i].seatno + "</b></span></td><td><span id=ticketno style=color:dodgerblue;margin-left:100px;><b>"
+                            + object[i].ticketno + "</b></span></td></tr>"
+                        $("#passengerdetails tbody").append(newrow);
+                        flight = object[i].flightno;
+                        from = object[i].flightfrom;
+                        to = object[i].flightto;
+                        dateofflightticketbooking = object[i].dateofbooking;
+                        arrivaltime = object[i].arrivaltime;
+                        departuretime = object[i].departuretime;
+                        totalticketfare+= parseInt(object[i].fare);
+
+                    }
+                    $("#Basicdetails tbody").append("<tr><td><span id=from style=margin-left:100px;><b>" + from + "</b></span></td><td><span id=from style=margin-left:150px;><b>" + from + "</b></span></td><td><span id=from style=margin-left:120px;><b>" + to + "</b></span></td></tr>");
+                    $("#flightname tbody").append("<tr><td><span id=flightno style=color:dodgerblue;margin-left:50px;><b>"
+                        + flight + "</b></span></td><td><span id=economyid style=color:dodgerblue;margin-left:50px;><b>Economy</b></span></td><td><span id=quota style=color:dodgerblue;margin-left:50px;><b>General</b></span></td><td><span id=dateofbooking style=color:dodgerblue;margin-left:20px;><b>" + dateofflightticketbooking + "</b></span></td><td><span id=arrival style=color:dodgerblue;margin-left:20px;><b>" + arrivaltime + "</b></span></td><td><span id=departure style=color:dodgerblue;margin-left:20px;><b>" + departuretime + "</b></span></td></tr>"
+                    )
+                    $("#ticketfare").text(totalticketfare);
+                    $("#dateofjourney").text(object[0].dateofjourney);
+                    $("#dateofjourney").css('color','dodgerblue');
+                },
+                error: function (err) {
+                    alert(err);
+                }
+
+            })
+
+            $("#btnSubmit").on("click", function () {
+                
+                html2canvas($('#parent')[0], {
+                    onrendered: function (canvas) {
+                        var data = canvas.toDataURL();
+                        var docDefinition = {
+                            content: [{
+                                image: data,
+                                width: 500
+                            }]
+                        };
+                        pdfMake.createPdf(docDefinition).download("cutomer-details.pdf");
+                    }
+                });
+            })
+        });
+
+    </script>
+</head>
+
+<body>
+    <div class="row">
+        <br />
+        @Html.ActionLink("Back To Home Page", "GetFlights", "Flights")<br /><br />
+    </div>
+    <img id="btnSubmit"  src="~/Images/PDF_Download.jpg" style="margin-left:100px; height:50px;width:100px;cursor:pointer" />
+        <div id="parent" class="divleft">
+            <div>
+                <span style="text-align: center; margin-left:300px;"><b><u>Electronic Reservation Slip (ERS)</u></b>-Normal User</span>
+                <div>
+                    <div class="division">
+                        <img style="margin-left: 80px;height:100px;width:180px;" src="~/Images/download3.jpg" />
+                    </div>
+                    <div class="division">
+                        <img style="margin-left: 225px;height:75px;width:180px;" src="~/Images/Evrylogo.png" />
+                    </div>
+                    <div style="margin-left: 300px;">
+                        Date of Journey: <span id="dateofjourney"></span>
+                    </div>
+                    <table id="Basicdetails">
+                        <thead>
+                            <tr>
+                                <th><span style="margin-left: 100px;"><b>Booked From</b></span></th>
+                                <th><img style="margin-left: 100px;" src="~/Images/Boarding.png" width="200" height="50" /></th>
+                                <th><span style="margin-left: 100px;"><b>To</b></span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div><br />
+                <hr style="border-style:solid;" />
+                <div id="ticketsection">
+                    <table id="flightname">
+                        <thead>
+                            <tr>
+                                <th><span style="margin-left: 50px;"><b>Flight</b></span></th>
+                                <th><span style="margin-left: 50px;"><b>Class</b></span></th>
+                                <th><span style="margin-left: 50px;"><b>Quota</b></span></th>
+                                <th><span style="margin-left: 20px;"><b>Booking Date</b></span></th>
+                                <th><span style="margin-left: 20px;"><b>Schedule Arrival</b></span></th>
+                                <th><span style="margin-left: 20px;"><b>Schedule Departure</b></span></th>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+             
+                </div><br />
+                <hr style="border-style:solid;" />
+                <span style="margin-left:350px;"><b><u>Passenger Details</u></b></span>
+                <table id="passengerdetails">
+                    <thead>
+                        <tr>
+                            <th>
+                                <span style="margin-left: 80px;"><b>Name</b></span>
+                            </th>
+
+                            <th>
+                                <span style="margin-left: 100px;"><b>Age</b></span>
+                            </th>
+
+                            <th>
+                                <span style="margin-left: 100px;"><b>Gender</b></span>
+                            </th>
+                            <th>
+                                <span style="margin-left: 100px;"><b>Seat No</b></span>
+                            </th>
+                            <th>
+                                <span style="margin-left: 100px;"><b>Ticket No</b></span>
+                            </th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+                <hr style="border-style:solid;" />
+                <span style="margin-left:350px;"><b><u>Payment Details</u></b></span><br />
+                <span style="margin-left: 120px;"><b>Ticket Fare</b></span><b><span id="ticketfare" style="margin-left: 220px;"></span></b><br />
+
+                <hr style="border-style:solid;" />
+                <div>
+                    <span style="margin-left:350px;"><b><u>INSTRUCTIONS</u></b></span><br>
+                    <ol>
+                        <li>
+                            Prescribed Original ID proofs are:- Voter Identity Card / Passport / PAN Card / Driving License / Photo ID card issued by
+                            Central / State Govt. / Public Sector Undertakings of State / Central Government ,District Administrations , Municipal bodies
+                            and Panchayat Administrations which are having serial number / Student Identity Card with photograph issued by
+                            recognized School or College for their students / Nationalized Bank Passbook with photograph /Credit Cards issued by Banks
+                            with laminated photograph/Unique Identification Card "Aadhaar", m-Aadhaar, e-Aadhaar.
+                        </li>
+                    </ol>
+                    <h3 style="margin-left:350px;color:dodgerblue">Happy Journey!</h3>
+                </div>
+            </div>
+           
+        </div>
+       
+
+
+
+
+</body>
+</html>

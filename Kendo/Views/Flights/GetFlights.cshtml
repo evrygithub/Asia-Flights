@@ -1,0 +1,415 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Kendo UI</title>
+    <style>
+        .mygrid {
+            border-color: blue !important;
+            color: red;
+            background-color: blue !important;
+        }
+        .myDDL {
+            width: 10px;
+        }
+        /*#grid tr.k-master-row {
+            text-align: center
+        }*/
+        .division {
+            display: inline-block;
+            padding: 1rem 1rem;
+        }
+        .active {
+            background-color: orange !important;
+            color: white !important;
+        }
+    </style>
+    <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2023.1.117/styles/kendo.default-main.min.css">
+    <script src="https://kendo.cdn.telerik.com/2023.1.117/js/jquery.min.js"></script>
+    <script src="https://kendo.cdn.telerik.com/2023.1.117/js/kendo.all.min.js"></script>
+    <script src="https://kendo.cdn.telerik.com/2023.1.117/mjs/kendo.grid.js" type="module"></script>
+    <script type="text/javascript">
+
+        var datevalue = 0;
+        var from = '';
+        var to = '';
+        var day = 0;
+        var date = '';
+        var adults = 0;
+        var kids = 0;
+        var pagenumber = 1;
+        var totalrows = 0;
+        var rowsshown = 0; var numPages=0;
+        const weekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        function GridData() {
+
+            $("#grid").kendoGrid({
+                dataSource: CustomHelper.GridDataSource(),
+                filterable: false,
+                sortable: false,
+                columns: CustomHelper.GenerateColumns(),
+                editable: false,
+                navigatable: true,
+                selectable: "row",
+                /*pageable: true,*/
+                scrollable: true,
+
+            });
+
+        }
+        
+        function onChangeCalender() {
+         datevalue = kendo.toString(this.value(), 'd');
+        }
+        function onChangeadults(e) {
+            adults = e.sender.text();
+        }
+        function onChangekids(e) {
+            kids = e.sender.text();
+        }
+        function onChangefrom(e) {
+            from = e.sender.text();
+        }
+        function onChangeto(e) {
+            to = e.sender.text();
+        }
+        function CreateImageDynamically() {
+            var img = $('<img id="dynamic">'); //Equivalent: $(document.createElement('img'))
+            img.attr('src', '/Images/download3.jpg');
+            img.css({'height':'460px','width':'1010px'});
+            img.appendTo('#imageset');
+        }
+        function RemoveImageDynamically() {
+            $("#dynamic").remove();
+        }
+        function GetdaysInMonth(month, year) {
+            return new Date(year, month,-1).getDate(); // Here -1 helps to not display morethan 1 month extra days in calendar
+        }
+        $(document).ready(function () {
+
+            var d = new Date();
+            $("#calendar").kendoCalendar({
+                change: onChangeCalender,
+                min: new Date(),// Today's date
+                max: new Date(d.getFullYear(), d.getMonth()+1, GetdaysInMonth(d.getMonth()+1,d.getFullYear())),
+            });
+            // To change the footer by selecting date on calendar. 
+            $("body").on("click", ".k-calendar-td.k-selected", function () {
+                var dateselected = $(this).find('a').attr("title");
+                $(".k-footer a").text(dateselected).css({ "color": "blue", "font-size": "20", "font-weight": "bold" });
+            })
+            $("#adults").kendoDropDownList({
+                dataSource: [
+                    { adultID: "1", adultnumber: "1" },
+                    { adultID: "2", adultnumber: "2" },
+                    { adultID: "3", adultnumber: "3" },
+                    { adultID: "4", adultnumber: "4" },
+                    { adultID: "5", adultnumber: "5" }
+
+                ],
+                dataTextField: "adultnumber",
+                dataValueField: "adultID",
+                index: -1,
+                change: onChangeadults,
+            });
+            $("#kids").kendoDropDownList({
+                dataSource: [
+                    { kidID: "1", kidnumber: "1" },
+                    { kidID: "2", kidnumber: "2" },
+                    { kidID: "3", kidnumber: "3" },
+                    { kidID: "4", kidnumber: "4" },
+                    { kidID: "5", kidnumber: "5" }
+
+                ],
+                dataTextField: "kidnumber",
+                dataValueField: "kidID",
+                index: -1,
+                change: onChangekids
+            });
+            $("#from").kendoDropDownList({
+                dataSource: [
+                    { fromID: "1", from: "Hyderabad" },
+                    { fromID: "2", from: "Mumbai" },
+                    { fromID: "3", from: "Jaipur" },
+                    { fromID: "4", from: "Vizag" },
+                    { fromID: "5", from: "Rajahmundry" }
+
+                ],
+                dataTextField: "from",
+                dataValueField: "fromID",
+                index: -1,
+                change:onChangefrom,
+            });
+            $("#to").kendoDropDownList({
+                dataSource: [
+                    { toID: "1", to: "Delhi" },
+                    { toID: "2", to: "Hyderabad" },
+                    { toID: "3", to: "Vizag" },
+                    { toID: "4", to: "Bangalore" },
+                ],
+                dataTextField: "to",
+                dataValueField: "toID",
+                index: -1,
+                change: onChangeto,
+            });
+            $("#btnsearch").kendoButton({
+                themeColor: "primary",
+            });
+            $("#btnsearch").on("click", function () {
+                
+                if ($("#adults").val() == "" && $("#kids").val() == "") {
+                    alert('Please select Adults or Kids');
+                }
+                else if ($("#from").val() == "" || $("#to").val() == "") {
+                    alert('Please select From and To');
+                }
+                else if (datevalue==0)
+                {
+                    alert('Please select Date Of Travelling');
+                }
+                else {
+
+                // To remove previous request pagination numbers.
+                $("#paginationdiv a").each(function () {
+                    var currentrow = $(this).closest("a");
+                    currentrow.remove();
+                });
+
+                // To remove old request image.
+                $("#imageset img").each(function () {
+                 var currentrow = $(this).closest("img");
+                  currentrow.remove();
+                });
+
+                // last time here i have added a constant array[] variable
+                date = new Date(datevalue);
+                day = weekday[date.getDay()].substring(0, 3); // Mon, Tue...etc
+                    totalrows = 0;
+                    rowsshown = parseInt($("#drpPagesList").val());
+                $.ajax({
+                    url: '@Url.Action("GetTotalRows", "Flights")',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: { fromplace: from, toplace: to, days: day, dateofjourney:datevalue},
+                    success: function (response) {
+                        debugger;
+                        totalrows = response;
+                        if (totalrows != 0)
+                        {
+                            CreateImageDynamically();
+                            $("#nodata").text("");
+                            $("#drpPagesList").attr("disabled", false);
+                            pagenumber = 1;
+                            GridData();
+                            var quo = totalrows / rowsshown;
+                            var rem = totalrows % rowsshown;
+                            if (rem == 0) {
+                                quo = Math.floor(quo);
+                                numPages = quo;
+                            }
+                            else {
+                                quo = Math.floor(quo);
+                                numPages = quo + 1;
+                            }
+                            for (i = 0; i < numPages; i++)
+                            {
+                                var pageNum = i + 1;
+                                $('#paginationdiv').append('<a id="' + pageNum + '" class="pagenumbers k-button k-button-solid-base k-button-sm k-rounded-sm" rel="' + i + '">' + pageNum + '</a> ');
+                            }
+                            $("#paginationdiv #1").addClass("active"); // By default  page 1 must be highlighted
+                        }
+                        else
+                        {
+                            $("#nodata").text("No Flights Available");
+                            $("#drpPagesList").attr("disabled", true);
+                            $("#drpPagesList").prop('selectedIndex', 0);
+                            GridData();
+                            RemoveImageDynamically();
+                            numPages = 0;
+                           
+                        }
+                        /*GridData();*/
+                    }
+                });
+             }
+            });
+            // Page numbers click event
+            $("body").on("click", ".pagenumbers", function () {
+                var current = document.getElementsByClassName("active");
+                current[0].className = current[0].className.replace(" active", ""); //space must be there before "active"
+                this.className += " active"; //space must be there before "active"
+                pagenumber = parseInt($(this).text()); // current page number which we click
+                GridData(); // Load data
+            });
+
+            // grid select button event
+            $("#grid").on('click', '.btnSelect', function () {
+                // get the current row
+                var currentRow = $(this).closest("tr");
+                var flightno = currentRow.find("td:eq(0)").html(); // get current row 1st table cell TD value
+                var companyname = currentRow.find("td:eq(1)").html(); // get current row 2nd table cell TD value
+                var flightfrom = currentRow.find("td:eq(3)").html(); // get current row 3rd table cell  TD value
+                var flightto = currentRow.find("td:eq(4)").html(); // get current row 4rd table cell  TD value
+                var fare = currentRow.find("td:eq(8)").html(); // get current row 8th table cell  TD value
+                var doj = datevalue;
+                var totalpassengers = parseInt(adults) + parseInt(kids);
+                window.location.href = "../Flights/ReserveTicket?fno=" + flightno + "&from=" + flightfrom + "&to=" + flightto + "&fare=" + fare + "&dateofjourney=" + doj + "&companyname=" + companyname + "&totalpassengers=" + totalpassengers;
+
+            });
+            $("#drpPagesList").on("change", function () {
+                debugger;
+                rowsshown = parseInt($("#drpPagesList").val()); // PageList dropdown which has 5, 10, 20
+                pagenumber = 1;
+                // To remove old request pagination numbers.
+                $("#paginationdiv a").each(function () {
+                    var currentrow = $(this).closest("a");
+                    currentrow.remove();
+                });
+                // To remove old request image.
+                $("#imageset img").each(function () {
+                    var currentrow = $(this).closest("img");
+                    currentrow.remove();
+                })
+                // last time here i have added a constant array[] variable
+                date = new Date(datevalue);
+                day = weekday[date.getDay()].substring(0, 3); // Mon, Tue...etc
+                totalrows = 0;
+                $.ajax({
+                    url: '@Url.Action("GetTotalRows", "Flights")',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: {fromplace:from,toplace:to,days:day,dateofjourney:datevalue},
+                    success: function (response) {
+                        debugger;
+                        totalrows = response;
+                        if (totalrows != 0) {
+                            CreateImageDynamically();
+                            $("#nodata").text("");
+                            $("#drpPagesList").attr("disabled", false);
+                            //var quo = totalrows / rowsshown;
+                            //quo = Math.floor(quo); // Math.floor() method rounds a number DOWN to the nearest integer.
+                            //numPages = quo + 1;
+                            var quo = totalrows / rowsshown;
+                            var rem = totalrows % rowsshown;
+                            if (rem == 0) {
+                                quo = Math.floor(quo);
+                                numPages = quo;
+                            }
+                            else {
+                                quo = Math.floor(quo);
+                                numPages = quo + 1;
+                            }
+                            for (i = 0; i < numPages; i++) {
+                                var pageNum = i + 1;
+                                $('#paginationdiv').append('<a id="' + pageNum + '" class="pagenumbers k-button k-button-solid-base k-button-sm k-rounded-sm" rel="' + i + '">' + pageNum + '</a>');
+                            }
+                            $("#paginationdiv #1").addClass("active"); // By default  page 1 must be highlighted
+                            GridData();
+                            
+                        }
+                        else {
+                            $("#nodata").text("No Flights Available");
+                            $("#drpPagesList").attr("disabled", true);
+                            $("#drpPagesList").prop('selectedIndex', 0);
+                            GridData();
+                            RemoveImageDynamically();
+                            numPages = 0;
+                        }
+                        //GridData();
+                    }
+                });
+            });
+        })
+        var CustomHelper = {
+            GenerateColumns: function () {
+                return columns = [
+                    { field: "flight_no", title: "Flight No", width: 40, editable: false },
+                    { field: "company_name", title: "Company Name", width: 40, editable: false },
+                    { field: "number_of_seats", title: "Seats Availability", width: 40, editable: false },
+                    { field: "flight_from", title: "Flight From", width: 40, editable: false },
+                    { field: "flight_to", title: "Flight To", width: 40, editable: false },
+                    { field: "arraival_time", title: "Flight Arraival Time", width: 40, editable: false },
+                    { field: "departure_time", title: "Flight Departure Time", width: 40, editable: false },
+                    { field: "days", title: "Days", width: 40, editable: false },
+                    { field: "fare", title: "Fare", width: 40, editable: false },
+                    { field: "Action", title: "Action", width: 20, editable: false, template:"<button class='btnSelect k-button k-button-solid-base k-button-solid-success k-button-md k-rounded-md'  style=font-size:14px;>Select</button>"},
+                ]
+            },
+            GridDataSource: function () {
+                debugger;
+                
+                    var gridDataSource = new kendo.data.DataSource({
+                    transport: {
+                            read:
+                            {
+                            url: 'Flights/GetAllFlights',
+                            type: 'GET',
+                            dataType: 'json',
+                            contentType: "application/json; charset=utf-8",
+                            data: { fromplace: from, toplace: to, days: day, pageno: pagenumber, rowsperpage: rowsshown, dateofjourney: datevalue}
+                            }
+                    },
+                })
+                return gridDataSource;
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div>
+        <h1 style="text-align:center;">Asia Airways - Online Air Reservation</h1>
+    </div>
+    <table id="img_div">
+        <tr>
+            <td>
+                <div>
+                    <label for="adults" style="width:55px;">No of Adults:<span style="color:red">*</span></label>
+                    <input id="adults" style="width:55px;" />
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    <label for="kids" style="width:55px;">No of kids:<span style="color:red">*</span></label>
+                    <input id="kids" style="width:55px;" />
+                </div>
+
+                <br />
+
+                <div>
+                    <label for="from" style="width:55px;">From:<span style="color:red">*</span></label>
+                    <input id="from" style="width:110px;" />
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    <label for="to" style="width:55px;">To:<span style="color:red">*</span></label>
+                    <input id="to" style="width:100px;" />
+                </div>
+
+                <br />
+
+                <div>
+                    <label for="dateoftravelling" style="width:55px;">Date of Travelling<span style="color:red">*</span></label>
+                    <div id="calendar"></div>
+                </div>
+
+                <div class="division">
+                    Select Page Size:
+                    <select id="drpPagesList" class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-primary">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                    </select>
+                </div>
+                <div class="division" style="margin-left:125px;">
+                    <button id="btnsearch">Search</button>
+                </div>
+            </td>
+            <td id="imageset"></td>
+        </tr>
+
+    </table>
+    <div class="container">
+        <div id="paginationdiv" class="container-fluid"></div>
+        <span id="nodata" style="color:red;"></span>
+        @*<div class="row">*@
+        <div id="grid" class="mygrid"></div>
+        @*</div>*@
+    </div>
+
+</body>
+</html>

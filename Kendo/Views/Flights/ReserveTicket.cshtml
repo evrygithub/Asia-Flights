@@ -1,0 +1,252 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2023.1.117/styles/kendo.default-main.min.css">
+    <script src="https://kendo.cdn.telerik.com/2023.1.117/js/jquery.min.js"></script>
+    <script src="https://kendo.cdn.telerik.com/2023.1.117/js/kendo.all.min.js"></script>
+    <style>
+        .fieldlist {
+            margin: 0 0 -1em;
+            padding: 0;
+        }
+        .fieldlist li {
+          list-style: none;
+          padding-bottom: 1em;
+            }
+
+        table, th, td {
+            /*border: 1px solid blue;
+            margin-left: 400px;*/
+            padding: 2px;
+            border: 1px solid black;
+            border-collapse: collapse;
+            margin-left: 400px;
+        }
+    
+            
+    </style>
+    <script type="text/javascript">
+        var ageheader, nameheader= '';
+        $(document).ready(function () {
+
+            // At the time of DOM load i need below element to be hidden
+            $("#btnPurchase").hide();
+            // we need this array to store Query string data
+            $("#txtcardnumber").kendoTextBox({
+                // need to write focus
+            });
+            var querystringdata = [];
+            querystringdata = getUrlVars(); // Split the Query string data and return
+
+            // Based on the count of Adults and kids, generate table rows.
+            for (var i = 1; i <= querystringdata.totalpassengers; i++) {
+                $("#tblpassengers tbody").append('<tr><td>' + querystringdata.dateofjourney + '</td><td>' + querystringdata.companyname + '</td><td>' + querystringdata.fno + '</td><td class=contenteditable style=background-color:lightyellow;><span style=color:red;>*</span><input type=text class=namechange style=width:150px;height:20px; /></td><td class=contenteditable style=background-color:lightyellow;><span style=color:red;>*</span><input type=text class=agechange style=width:30px;height:20px; /></td><td class=contenteditable style=background-color:lightyellow;><select style=width:70px;height:25px;><option value=Male>Male</option><option value=FeMale>FeMale</option></select></td><td>' + querystringdata.from + '</td><td>' + querystringdata.to + '</td><td>' + querystringdata.fare + '</td><td><input type=button class=deleterow name=btndelete value=Delete /></td></tr>');
+                $(".deleterow").addClass("k-button k-button-sm  k-button-solid-error");
+            }
+
+            $(".namechange").on("keypress", function (e) {
+                nameheader = $(this).closest('tbody').prev('thead').find('> tr > th:eq(3)').text();
+                if (!Validate(e, nameheader)) {
+                    //$(this).val("");
+                    alert('Please enter alphabets only');
+                    return false;
+                }
+            });
+
+            $(".agechange").on("keypress", function (e) {
+                ageheader = $(this).closest('tbody').prev('thead').find('> tr > th:eq(4)').text();
+                if (!Validate(e, ageheader)) {
+                    //$(this).val("");
+                    alert('Please enter numeric digits only');
+                    return false;
+                }
+            });
+            // Add more passengers event logic, append new row to the same html table
+            $(".addmorepassengers").on("click", function () {
+                $("#tblpassengers tbody").append('<tr><td>' + querystringdata.dateofjourney + '</td><td>' + querystringdata.companyname + '</td><td>' + querystringdata.fno + '</td><td class=contenteditable style=background-color:lightyellow;><span style=color:red;>*</span><input type=text class=newnamechange style=width:150px;height:20px; /></td><td class=contenteditable style=background-color:lightyellow;><span style=color:red;>*</span><input type=text class=newagechange style=width:30px;height:20px; /></td><td class=contenteditable style=background-color:lightyellow;><select style=width:70px;height:25px;><option value=Male>Male</option><option value=FeMale>FeMale</option></select></td><td>' + querystringdata.from + '</td><td>' + querystringdata.to + '</td><td>' + querystringdata.fare + '</td><td><input type=button class=deletenewrow name=btndeletenewrecord value=Delete /></td></tr>');
+                $(".deletenewrow").addClass("k-button k-button-sm  k-button-solid-error");
+                $(".deletenewrow").click(function () {
+                    $(this).closest("tr").remove();
+                });
+            });
+
+            $("body").on("keypress", ".newnamechange", function (e) {
+                nameheader = $(this).closest('tbody').prev('thead').find('> tr > th:eq(3)').text();
+                if (!Validate(e, nameheader)) {
+                    //$(this).val("");
+                    alert('Please enter alphabets only');
+                    return false;
+                }
+            });
+
+            $("body").on("keypress", ".newagechange", function (e) {
+                ageheader = $(this).closest('tbody').prev('thead').find('> tr > th:eq(4)').text();
+                if (!Validate(e, ageheader)) {
+                    //$(this).val("");
+                    alert('Please enter numeric digits only');
+                    return false;
+                }
+            });
+
+            $("#txtcardnumber").on("blur", function (e) {
+                if (!Validate(e, "card")) {
+                    //$("#txtcardnumber").val("");
+                    alert('Please enter 10 numeric digits only');
+                    return false;
+                }
+            });
+
+            $(".deleterow").on("click", function () {
+                var currentrow = $(this).closest("tr");
+                currentrow.remove();
+            });
+
+            // To check atleast one row is there in table then show the Purchase button
+            if ($("#tblpassengers tbody").length >= 1)
+                $("#btnPurchase").show();
+
+            // To proceed for Payment
+            $("#btnPurchase").on("click", function () {
+
+                var passengerslist = [];
+                $("#tblpassengers tbody tr").each(function () {
+
+                    var currentrow = $(this).closest("tr");
+                    var doj = currentrow.find("td:eq(0)").text();
+                    var flightno = currentrow.find("td:eq(2)").text();
+                    var passengername = currentrow.find("td:eq(3) input").val();
+                    var age = currentrow.find("td:eq(4) input").val();
+                    var gender = currentrow.find("td:eq(5) select").val();
+                    var flightfrom = currentrow.find("td:eq(6)").text();
+                    var flightto = currentrow.find("td:eq(7)").text();
+                    var fare = currentrow.find("td:eq(8)").text();
+                    var cardtype = $('input[name="card"]:checked').val();
+                    var cardnumber = $("#txtcardnumber").val();
+                    var obj = {};
+                    obj.dateofjourney = doj;
+                    obj.flightno = flightno;
+                    obj.passengername = passengername;
+                    obj.age = age;
+                    obj.gender = gender;
+                    obj.flightfrom = flightfrom;
+                    obj.flightto = flightto;
+                    obj.fare = fare;
+                    obj.paymentmethod = cardtype;
+                    obj.carddetails = cardnumber;
+
+                    if ((obj.passengername != null && obj.passengername != '' && obj.passengername != undefined)
+                        && (obj.age != null && obj.age != '' && obj.age != undefined)
+                        && (obj.gender != null && obj.gender != '' && obj.gender != undefined))
+                        passengerslist.push(obj);
+                });// End of table loop
+
+                if ($('input[name="card"]:checked').val() == undefined) {
+
+                    alert('Please fill * mandatory fields');
+                    return false;
+                }
+                else if ($("#txtcardnumber").val() == '') {
+                    alert('Please fill * mandatory fields');
+                    return false;
+                }
+                if (passengerslist.length > 0) {
+                    var createTicket = {};
+                    createTicket.passengers = passengerslist;
+                    $.ajax({
+                        url: '@Url.Action("AddPassenger", "Flights")',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: { createTicket },
+                        success: function (response) {
+                            window.location.href = '@Url.Action("Thanks", "Flights")'
+                        }
+                    });
+                }
+                else {
+                    alert('Please fill passenger name and age details');
+                    return false;
+                }
+
+            });
+
+
+        }); // End of document ready
+
+        function Validate(e,header) {
+            var isValid=false;
+            var keyCode = e.keyCode || e.which;
+            var regexforcardandage = /^[0-9]+$/;       
+            if (header == 'Passenger Name' && (keyCode >= 65 && keyCode <= 90 || keyCode >= 97 && keyCode <= 122) || keyCode == 13 || keyCode == 32)
+                isValid = true;
+
+            else if (header == 'Age' && keyCode >= 48 && keyCode <= 57) {
+                isValid = true
+            }
+
+            else if (header == "card") {
+                var cardnumber = $("#txtcardnumber").val();
+                if (regexforcardandage.test(cardnumber) && cardnumber.length == 10)
+                    isValid = true;
+            }
+            return isValid;
+        }
+        // To split the query string and its values
+        function getUrlVars() {
+            var vars = [], hash;
+            var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+            for (var i = 0; i < hashes.length; i++) {
+                hash = hashes[i].split('=');
+                vars.push(hash[0]);
+                vars[hash[0]] = hash[1];
+            }
+            return vars;
+        }
+
+    </script>
+</head>
+<body>
+    <div>
+        <h3 style="margin-left:600px;color:blue;">Enter Payment Details here</h3><br />
+        <div style="margin-left:600px;">
+            <ul class="fieldlist">
+                <li>
+                    Type of Card <span style="color:red;">*</span>&nbsp;&nbsp;&nbsp;<input type="radio" name="card" id="mastercard" value="Master" />Master Card  <input type="radio" name="card" id="visacard" value="Visa" />Visa
+                </li>
+            </ul>
+        </div>
+        <br />
+        <div style="margin-left:600px;">
+           Card Number <span style="color:red;">*</span> <input id="txtcardnumber" style="width: 200px; height:25px; border-color:blueviolet" />
+        </div><br />
+
+    </div>
+
+    <div style="margin-left:400px;">
+        <input type="button" id="btnPurchase" class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-primary" value="Purchase Ticket" />
+    </div>
+    <br />
+
+    <table id="tblpassengers">
+        <thead>
+            <tr>
+                <th>Date Of Journey</th>
+                <th>Company</th>
+                <th>Flight No:</th>
+                <th>Passenger Name</th>
+                <th>Age</th>
+                <th>Gender</th>
+                <th>Flight From</th>
+                <th>Flight To</th>
+                <th>Fare</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table><br />
+    <div style="margin-left:400px;">
+        <input class="addmorepassengers k-button k-button-md  k-button-solid-success" type="button" value="Add more passengers" />
+    </div>
+
+</body>
+</html>
