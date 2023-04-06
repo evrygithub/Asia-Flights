@@ -71,7 +71,7 @@ namespace Kendo.Controllers
         {
             string doj = string.Empty; string cardno = string.Empty;
             string fno = string.Empty;
-            foreach (var item in passengerlist.Take(1))
+            foreach (var item in passengerlist.Take(1))// Take 1st item
             {
                 
                 doj = item.dateofjourney;
